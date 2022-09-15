@@ -10,16 +10,15 @@
 // All of the files in this directory and all subdirectories are:
 // Copyright (c) 2022 Bogdan Simion
 // -------------
-
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <time.h>
+#include "time_util.h"
 
 #define NVECS 10000
 #define NDIMS 10000
-
 
 static double ranf(void)
 {
@@ -37,22 +36,23 @@ void generate(double m[NDIMS][NVECS])
 }
 
 
-//TODO: optimize
 double avg_vec_len(const double m[NDIMS][NVECS])
 {
-	double len_sum = 0.0;
+    double temp[NVECS] = {0};
 
-	for (int i = 0; i < NVECS; i++) {
-		double s = 0.0;
-		for (int j = 0; j < NDIMS; j++) {
-			s += m[j][i] * m[j][i];
+	for (int i = 0; i < NDIMS; i++) {
+		for (int j = 0; j < NVECS; j++) {
+			temp[j] += m[i][j] * m[i][j];
 		}
+    }
+    double sum = 0.0;
 
-		double len = sqrt(s);
-		len_sum += len;
-	}
+    for(int i=0; i<NVECS; i++)
+    {
+        sum += sqrt(temp[i]);
+    }
 
-	return len_sum / NVECS;
+	return sum / NVECS;
 }
 
 
@@ -62,11 +62,18 @@ int main()
 {
 	generate(matrix);
 
-	//TODO: measure time (in milliseconds) taken to execute avg_vec_len()
 	double time_msec = 0.0;
-	double avg_len = avg_vec_len(matrix);
-
-	printf("%f\n", avg_len);
-	printf("%f\n", time_msec);
+	//clock in 
+    struct timespec start, stop;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    double avg_len = avg_vec_len(matrix);
+    //clock out
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    //time_msec = ( stop.tv_sec - start.tv_sec ) + ( stop.tv_nsec - start.tv_nsec ) / BILLION;
+	double start_time = timespec_to_msec(start);
+    double end_time = timespec_to_msec(stop);
+    time_msec = end_time-start_time;
+    printf("%f\n", avg_len);
+    printf("%f\n", time_msec);
 	return 0;
 }
